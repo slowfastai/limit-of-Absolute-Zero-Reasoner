@@ -15,7 +15,7 @@ Could `pass@k` be used to analyze what **AZR** actually improves — is it disco
 
 A few days ago, I happened to have some free time, so I decided to run a small experiment myself to explore this question — **just a quick observation, nothing rigorous**. Fortunately, the [EvalPlus](https://github.com/evalplus/evalplus) framework made it easy to get started with pass@k evaluation on both HumanEval and HumanEval+.
 
-# 🚧 What I Did
+## 🚧 What I Did
 
 With a single RTX 3090 and limited compute, I ran a simple evaluation using the following two models:
 * Qwen2.5-Coder-7B (base model)
@@ -30,14 +30,67 @@ using pass@k at k = [1, 2, 4, 8, 16, 32].
 To keep the setting consistent with the **Limit-of-RLVR** paper, I followed the same decoding parameters:
 
 - **Temperature**: 0.6  
-- **Top-p sampling**: 0.95  
-
-This is just a preliminary test and not an exhaustive benchmarking effort — mainly a small-scale exploration out of personal interest.
-
+- **Top-p sampling**: 0.95
 
 This was not a comprehensive experiment — just a first look to get a rough sense of how AZR behaves under this metric.
 
-# 📊 `pass@k` Results on HumanEval (HE) and HumanEval+ (HE+)
+
+### 🔧 Development Environment Setup
+
+The evaluation experiment is conducted using `evalplus`. First, install the required dependencies:
+```bash
+pip install packaging ninja
+pip install flash-attn --no-build-isolation
+pip install "evalplus[vllm]" --upgrade
+```
+
+I found that some modifications to the evalplus code were necessary for better experimentation (including setting the correct k values and renaming log files). Therefore, uninstall the previously installed evalplus:
+
+```bash
+pip uninstall evalplus
+```
+
+Clone the evalplus repository:
+```bash
+git clone https://github.com/evalplus/evalplus
+```
+
+Replace the corresponding files in evalplus with `codegen.py` and `evaluate.py` from this repo, then:
+```bash
+cd evalplus
+pip install -e .
+```
+
+
+### Running the Code
+
+Here are some example commands. You need to modify the model name and `n_samples` according to your needs:
+```bash
+# Greedy decoding evaluation
+evalplus.evaluate --model "/root/autodl-tmp/Qwen-Qwen2.5-Coder-7B" \
+                  --dataset humaneval \
+                  --backend vllm \
+                  --greedy
+
+# Evaluation with 32 samples
+evalplus.evaluate --model "/root/autodl-tmp/Qwen-Qwen2.5-Coder-7B" \
+                  --dataset humaneval \
+                  --backend vllm \
+                  --n_samples 32 \
+                  --temperature 0.6
+
+# Evaluation of AZR model
+evalplus.evaluate --model "/root/autodl-tmp/andrewzh-Absolute_Zero_Reasoner-Coder-7b" \
+                  --dataset humaneval \
+                  --backend vllm \
+                  --n_samples 32 \
+                  --temperature 0.6
+```
+
+
+
+
+## 📊 `pass@k` Results on HumanEval (HE) and HumanEval+ (HE+)
 
 ![plot](./pass@k_curves.png)
 
@@ -76,4 +129,4 @@ I'm especially intrigued by how **reinforcement learning methods**, especially *
 
 This small experiment was a first step for me in trying to understand that question a bit better.
 
-If you’ve tried something similar, or have thoughts on this topic, I’d love to hear from you.
+If you've tried something similar, or have thoughts on this topic, I'd love to hear from you.
